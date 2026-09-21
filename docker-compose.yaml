@@ -7,14 +7,16 @@ services:
     container_name: prometheus
     ports:
       - "9090:9090"
+    expose:
+      - 9323
     volumes:
       - /etc/prometheus:/config
       - prometheus-data:/prometheus
     restart: unless-stopped
     command: 
       - "--config.file=/config/prometheus.yml"
-  #  extra_hosts:
-  #    - "host.docker.internal:host-gateway"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   
   grafana:
     image: grafana/grafana:13.0
@@ -25,17 +27,17 @@ services:
       - grafana-data:/var/lib/grafana
     restart: unless-stopped
 
-  #node-exporter:
-  #  image: quay.io/prometheus/node-exporter:v1.12.1
-  #  container_name: node-exporter
-  #  ports:
-  #    - "9100:9100"
-  #  command:
-  #    - '--path.rootfs=/host'
-  #  pid: host
-  #  restart: unless-stopped
-  #  volumes:
-  #    - '/:/host:ro,rslave'
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.12.1
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro,rslave'
 
 volumes:
   prometheus-data:
