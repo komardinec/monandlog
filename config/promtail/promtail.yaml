@@ -9,6 +9,16 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
+  - job_name: journald
+    journal:
+      max_age: 48h
+      path: /var/log/journal
+      labels:
+        job: journald
+        host: localhost
+    relabel_configs:
+      - source_labels: ["__journal__systemd_unit"]
+        target_label: unit
   - job_name: flog_scrape
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
@@ -33,20 +43,21 @@ scrape_configs:
           expressions:
             level: level
   
-  - job_name: system
-    static_configs:
-      - targets: 
-          - localhost
-        labels:
-          job: syslog
-          host: localhost
-          __path__: /var/log/syslog
+#  - job_name: system
+#    static_configs:
+#      - targets: 
+#          - localhost
+#        labels:
+#          job: journal
+#          host: localhost
+#          __path__: /var/log/*log
  
-  - job_name: ufw
-    static_configs:
-      - targets: 
-          - localhost
-        labels:
-          job: ufw
-          host: localhost
-          __path__: /var/log/ufw.log
+#  - job_name: ufw
+#    static_configs:
+#      - targets: 
+#          - localhost
+#        labels:
+#          job: ufw
+#          host: localhost
+#          __path__: /var/log/ufw.log
+
