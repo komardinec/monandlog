@@ -13,7 +13,7 @@ func main() {
 	// Use http.NewServeMux function to initialize a new servemux(controller),
 	mux := http.NewServeMux()
 	// then register WelcomeTest as a handler for root pattern "/"
-	mux.HandleFunc("GET /{$}", WelcomeTest) // restrict catch-all to match / only
+	mux.HandleFunc("GET /{$}", HomePage) // restrict catch-all to match / only
 	mux.HandleFunc("GET /file/view/{filename}", ViewFile)
 	mux.HandleFunc("GET /file/create", CreateFile)
 	mux.HandleFunc("POST /file/create", CreateFilePost)

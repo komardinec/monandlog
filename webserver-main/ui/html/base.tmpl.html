@@ -1,0 +1,20 @@
+{{define "base"}}
+
+<!DOCTYPE html>
+<html lang="eng">
+    <head>
+        <meta charset="utf-8">
+        <title>{{template "title" .}} - Debut Web-application</title>
+    </head>
+    <body>
+        <header>
+            <h1><a href="/">komardinec/debutapp</a></h1>
+        </header>
+        {{template "nav" .}}
+        <main>
+            {{template "main" .}}
+        </main>
+        <footer>Author: <a href="https://github.com/komardinec">komardinec</a></footer>
+    </body>
+</html>
+{{end}}
