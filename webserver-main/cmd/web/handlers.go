@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-// Not a very good practice to use global variables at general,
+// It is not recommended to use global variables at general,
 // but if we want to use templates for all handlers
 // global []string are very good implementation
 var templateFiles = []string{
@@ -22,7 +22,7 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 	// template.ParseFiles will read the template file and turn its contents
 	// into a template set. If there is an error occured we will get into terminal the error message
 	// and user will get nice little plain text "Internal Server Error" response
-	// and in that case handler will return and no subsequent code will be executed.
+	// and that case handler will return and no subsequent code will be executed.
 	ts, err := template.ParseFiles(templateFiles...) // we unpacking string slice of templateFiles paths
 	if err != nil {
 		log.Print(err.Error())

@@ -5,6 +5,8 @@
     <head>
         <meta charset="utf-8">
         <title>{{template "title" .}} - Debut Web-application</title>
+        <link rel="stylesheet" href="/static/css/main.css">
+        <link rel="shortcut icon" href="/static/img/favicon.ico" type="image/x-icon">
     </head>
     <body>
         <header>
@@ -15,6 +17,7 @@
             {{template "main" .}}
         </main>
         <footer>Author: <a href="https://github.com/komardinec">komardinec</a></footer>
+        <script src="/static/js/main.js" type="text/javascript"></script>
     </body>
 </html>
 {{end}}
