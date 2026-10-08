@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -16,7 +15,7 @@ var templateFiles = []string{
 	"./ui/html/partials/nav.tmpl.html",
 }
 
-func HomePage(w http.ResponseWriter, r *http.Request) {
+func (app *application) HomePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", "GO v1.27.1")
 
 	// template.ParseFiles will read the template file and turn its contents
@@ -25,8 +24,7 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 	// and that case handler will return and no subsequent code will be executed.
 	ts, err := template.ParseFiles(templateFiles...) // we unpacking string slice of templateFiles paths
 	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.ServerError(w, r, err)
 		return
 	}
 
@@ -34,13 +32,12 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 	// template as the response body
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.ServerError(w, r, err)
 	}
 }
 
 // Handler for viewing the files (test function, meant to be depricated later)
-func ViewFile(w http.ResponseWriter, r *http.Request) {
+func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
 	filename := r.PathValue("filename")
 
 	if filename == "" {
@@ -52,12 +49,12 @@ func ViewFile(w http.ResponseWriter, r *http.Request) {
 }
 
 // Handler for creating the files (test function, meant to be depricated later)
-func CreateFile(w http.ResponseWriter, r *http.Request) {
+func (app *application) CreateFile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("File creation form"))
 }
 
 // Handler to work with POST method while creating a new file (test function, meant to be depricated later)
-func CreateFilePost(w http.ResponseWriter, r *http.Request) {
+func (app *application) CreateFilePost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", "Test Go Backend Server")
 	w.Header().Add("Author", "komardinec")
 

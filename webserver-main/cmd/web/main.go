@@ -1,35 +1,42 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"flag"
+	"log/slog"
 	"net/http"
+	"os"
 )
+
+// Application dependencies struct to hold the application-wide dependencies
+type application struct {
+	logger *slog.Logger
+}
+
+type serverConfigStruct struct {
+	serverPort string
+}
 
 func main() {
 	// Define destinct parameter variable to control the server port number
-	serverPort := 8080
+	//serverPort := 8080
 
-	// Use http.NewServeMux function to initialize a new servemux(controller),
-	mux := http.NewServeMux()
+	var serverConfig serverConfigStruct
 
-	// Create a file server which serves files out of the "./ui/static" directory
-	// Path are relative to webserver directory root (execution place)
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	// --- Flag section ---
+	flag.StringVar(&serverConfig.serverPort, "addr", ":8080", "HTTP Listen address (IP:Port).")
 
-	// Use the mux.Handle() function to register a file server as the handler
-	// for all URL paths starting with the path given in http.Dir() function
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer)) // http.StripPrefix() will remove "/static" from a filesystem path
-	// to make possible looking for a files inside .ui/static/ sub-directory
+	flag.Parse()
 
-	// then register WelcomeTest as a handler for root pattern "/"
-	mux.HandleFunc("GET /{$}", HomePage) // restrict catch-all to match "/" only
-	mux.HandleFunc("GET /file/view/{filename}", ViewFile)
-	mux.HandleFunc("GET /file/create", CreateFile)
-	mux.HandleFunc("POST /file/create", CreateFilePost)
+	// Create logger to write into terminal various messages regarding software actions and events
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true}))
 
 	// Print starting log message
-	log.Printf("Server is running on port %d. Ctrl+C to stop it...", serverPort)
+	logger.Info("Server is running", "address", serverConfig.serverPort)
+
+	// Initialize a new instance of application struct, containing dependencies for structured logging
+	app := &application{
+		logger: logger,
+	}
 
 	// Use the http.ListenAndServe() function starts a new web server.
 	// We pass inside 2 arguments - TCP address to listen on
@@ -37,6 +44,6 @@ func main() {
 	// Based on information from documentation http.ListenAndServe always return
 	// non-nil error so if we something goes wrong log.Fatal()
 	// will print it as a fatal error
-	err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), mux)
-	log.Fatal(err)
+	err := http.ListenAndServe(serverConfig.serverPort, app.Route())
+	logger.Error(err.Error())
 }
