@@ -7,12 +7,17 @@ import (
 	"net/http"
 	"os"
 
-	_ "github.com/go-sql-driver/mysql"
+	// Import module package of interanl db module
+	"debutwebapp.komardinec/internal/models"
+
+	_ "github.com/go-sql-driver/mysql" // underscore is here because we don't need anything directly
+	// from mysql, except init() function of the driver. This is standard practice for most GO's SQL drivers.
 )
 
 // Application dependencies struct to hold the application-wide dependencies
 type application struct {
-	logger *slog.Logger
+	logger   *slog.Logger
+	dbWebApp *models.WebAppModel
 }
 
 type serverConfigStruct struct {
@@ -21,11 +26,14 @@ type serverConfigStruct struct {
 }
 
 func openDB(dsn string) (*sql.DB, error) {
+	// The sql.Open() function initializes a new sql.DB object, which is essentially a
+	// pool of database connections.
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
 
+	// db.Ping() will test if connection pool to database are actually works
 	err = db.Ping()
 	if err != nil {
 		db.Close()
@@ -36,13 +44,12 @@ func openDB(dsn string) (*sql.DB, error) {
 }
 
 func main() {
-	// Define destinct parameter variable to control the server port number
-
 	var serverConfig serverConfigStruct
 
 	// --- Flag section ---
 	flag.StringVar(&serverConfig.serverPort, "addr", ":8080", "HTTP Listen address (IP:Port).")
-	flag.StringVar(&serverConfig.dbSourceName, "dsn", "webserver:iamwebserver123@/testdb?parseTime=true", "MySQL data source name")
+	flag.StringVar(&serverConfig.dbSourceName, "dsn", "webserver:iamwebserver123@/debut?parseTime=true", "MySQL data source name")
+
 	flag.Parse()
 
 	// Create logger to write into terminal various messages regarding software actions and events
@@ -51,27 +58,32 @@ func main() {
 	// Print starting log message
 	logger.Info("Server is running", "address", serverConfig.serverPort)
 
-	// Initialize a new instance of application struct, containing dependencies for structured logging
-	app := &application{
-		logger: logger,
-	}
-	// To keep main() tidy
-	// Connection to db pool wil be created by separate openDB() function
-	// *dsn will be passed as a command-line flag
+	// To keep the main() function opwnDB() function,
+	// with code for creating a DB connection pool.
+	// We will get a DSN from a cmd flag
 	db, err := openDB(serverConfig.dbSourceName)
 	if err != nil {
-		app.logger.Error(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 
+	// We also defer a call to db.Close(), so that the connection pool is closed
+	// before the main() exits
 	defer db.Close()
+
+	// Initialize a new instance of application struct, containing dependencies for structured logging
+	app := &application{
+		logger:   logger,
+		dbWebApp: &models.WebAppModel{DB: db},
+	}
 
 	// Use the http.ListenAndServe() function starts a new web server.
 	// We pass inside 2 arguments - TCP address to listen on
 	// and servemux created earlier.
 	// Based on information from documentation http.ListenAndServe always return
-	// non-nil error so if we something goes wrong log.Fatal()
-	// will print it as a fatal error
+	// non-nil error so if we something goes wrong logger.Error()
+	// will print it as a fatal error.
 	err = http.ListenAndServe(serverConfig.serverPort, app.Route())
 	logger.Error(err.Error())
+	os.Exit(1)
 }

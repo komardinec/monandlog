@@ -1,22 +1,33 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
+
+	"debutwebapp.komardinec/internal/models"
 )
 
 // It is not recommended to use global variables at general,
 // but if we want to use templates for all handlers
 // global []string are very good implementation
-var templateFiles = []string{
-	"./ui/html/base.tmpl.html",
-	"./ui/html/pages/home.tmpl.html",
-	"./ui/html/partials/nav.tmpl.html",
-}
+//var templateFiles = []string{
+//	"./ui/html/base.tmpl.html",
+//	"./ui/html/pages/home.tmpl.html",
+//	"./ui/html/pages/view.tmpl.html",
+//	"./ui/html/partials/nav.tmpl.html",
+//}
 
 func (app *application) HomePage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Server", "GO v1.27.1")
+	w.Header().Add("Server", "GO v1.27.x")
+
+	var templateFiles = []string{
+		"./ui/html/base.tmpl.html",
+		"./ui/html/pages/home.tmpl.html",
+		"./ui/html/partials/nav.tmpl.html",
+	}
 
 	// template.ParseFiles will read the template file and turn its contents
 	// into a template set. If there is an error occured we will get into terminal the error message
@@ -38,14 +49,48 @@ func (app *application) HomePage(w http.ResponseWriter, r *http.Request) {
 
 // Handler for viewing the files (test function, meant to be depricated later)
 func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
-	filename := r.PathValue("filename")
+	var templateFiles = []string{
+		"./ui/html/base.tmpl.html",
+		"./ui/html/pages/view.tmpl.html",
+		"./ui/html/partials/nav.tmpl.html",
+	}
 
-	if filename == "" {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if id < 1 || err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	fmt.Fprintf(w, "Currently looking at: %s", filename)
+	// Use the SnippetModel's Get() method to retreive the data for a
+	// specific record based on its ID. If no matching record is found,
+	// return a 404 Not Found response
+	file, err := app.dbWebApp.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.NotFound(w, r)
+		} else {
+			app.ServerError(w, r, err)
+		}
+		return
+	}
+
+	ts, err := template.ParseFiles(templateFiles...)
+	if err != nil {
+		app.ServerError(w, r, err)
+		return
+	}
+
+	data := templateData{
+		File: file,
+	}
+
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.ServerError(w, r, err)
+	}
+
+	// Plain-text response body
+	//fmt.Fprintf(w, "%+v", file)
 }
 
 // Handler for creating the files (test function, meant to be depricated later)
@@ -55,11 +100,54 @@ func (app *application) CreateFile(w http.ResponseWriter, r *http.Request) {
 
 // Handler to work with POST method while creating a new file (test function, meant to be depricated later)
 func (app *application) CreateFilePost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Server", "Test Go Backend Server")
-	w.Header().Add("Author", "komardinec")
+	//w.Header().Add("Server", "Test Go Backend Server")
+	//w.Header().Add("Author", "komardinec")
 
-	// Send 201 status code
-	w.WriteHeader(http.StatusCreated)
+	title := "POST test DB insert"
+	content := "I am thou, thou art I"
+	expires := 365
 
-	w.Write([]byte("Creating new file..."))
+	id, err := app.dbWebApp.Insert(title, content, expires)
+	if err != nil {
+		app.ServerError(w, r, err)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/file/view/%d", id), http.StatusSeeOther)
+}
+
+func (app *application) Latest(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Handler-Type", "Latest")
+
+	files, err := app.dbWebApp.Latest()
+	if err != nil {
+		app.ServerError(w, r, err)
+		return
+	}
+
+	//for _, file := range files {
+	//	fmt.Fprintf(w, "%+v\n", file)
+	//}
+
+	data := templateData{
+		Files: files,
+	}
+
+	var templateFiles = []string{
+		"./ui/html/base.tmpl.html",
+		"./ui/html/pages/latest.tmpl.html",
+		"./ui/html/partials/nav.tmpl.html",
+	}
+
+	ts, err := template.ParseFiles(templateFiles...)
+	if err != nil {
+		app.ServerError(w, r, err)
+		return
+	}
+
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.ServerError(w, r, err)
+	}
+
 }

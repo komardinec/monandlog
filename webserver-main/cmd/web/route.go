@@ -18,7 +18,8 @@ func (app *application) Route() *http.ServeMux {
 
 	// then register WelcomeTest as a handler for root pattern "/"
 	mux.HandleFunc("GET /{$}", app.HomePage) // restrict catch-all to match "/" only
-	mux.HandleFunc("GET /file/view/{filename}", app.ViewFile)
+	mux.HandleFunc("GET /file/view/{id}", app.ViewFile)
+	mux.HandleFunc("GET /file/view/latest", app.Latest)
 	mux.HandleFunc("GET /file/create", app.CreateFile)
 	mux.HandleFunc("POST /file/create", app.CreateFilePost)
 
