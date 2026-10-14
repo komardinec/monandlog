@@ -3,12 +3,13 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
 
 	// Import module package of interanl db module
-	"debutwebapp.komardinec/internal/models"
+	models "debutwebapp.komardinec/internal/models"
 
 	_ "github.com/go-sql-driver/mysql" // underscore is here because we don't need anything directly
 	// from mysql, except init() function of the driver. This is standard practice for most GO's SQL drivers.
@@ -16,8 +17,9 @@ import (
 
 // Application dependencies struct to hold the application-wide dependencies
 type application struct {
-	logger   *slog.Logger
-	dbWebApp *models.WebAppModel
+	logger        *slog.Logger
+	dbWebApp      *models.WebAppModel
+	templateCache map[string]*template.Template
 }
 
 type serverConfigStruct struct {
@@ -71,10 +73,18 @@ func main() {
 	// before the main() exits
 	defer db.Close()
 
+	// Initialize a new template cache
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	// Initialize a new instance of application struct, containing dependencies for structured logging
 	app := &application{
-		logger:   logger,
-		dbWebApp: &models.WebAppModel{DB: db},
+		logger:        logger,
+		dbWebApp:      &models.WebAppModel{DB: db},
+		templateCache: templateCache,
 	}
 
 	// Use the http.ListenAndServe() function starts a new web server.

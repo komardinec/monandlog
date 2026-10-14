@@ -3,58 +3,22 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 
-	"debutwebapp.komardinec/internal/models"
+	models "debutwebapp.komardinec/internal/models"
 )
-
-// It is not recommended to use global variables at general,
-// but if we want to use templates for all handlers
-// global []string are very good implementation
-//var templateFiles = []string{
-//	"./ui/html/base.tmpl.html",
-//	"./ui/html/pages/home.tmpl.html",
-//	"./ui/html/pages/view.tmpl.html",
-//	"./ui/html/partials/nav.tmpl.html",
-//}
 
 func (app *application) HomePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", "GO v1.27.x")
 
-	var templateFiles = []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/pages/home.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-	}
+	data := app.newTemplateData(r)
 
-	// template.ParseFiles will read the template file and turn its contents
-	// into a template set. If there is an error occured we will get into terminal the error message
-	// and user will get nice little plain text "Internal Server Error" response
-	// and that case handler will return and no subsequent code will be executed.
-	ts, err := template.ParseFiles(templateFiles...) // we unpacking string slice of templateFiles paths
-	if err != nil {
-		app.ServerError(w, r, err)
-		return
-	}
-
-	// ExecuteTemplate() method will write contents of the "base"
-	// template as the response body
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		app.ServerError(w, r, err)
-	}
+	app.Render(w, r, http.StatusOK, "home.tmpl.html", data)
 }
 
 // Handler for viewing the files (test function, meant to be depricated later)
 func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
-	var templateFiles = []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/pages/view.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-	}
-
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if id < 1 || err != nil {
 		http.NotFound(w, r)
@@ -74,23 +38,15 @@ func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ts, err := template.ParseFiles(templateFiles...)
-	if err != nil {
-		app.ServerError(w, r, err)
-		return
-	}
+	data := app.newTemplateData(r)
+	data.File = file
 
-	data := templateData{
-		File: file,
-	}
+	//data := templateData{
+	//	File: file,
+	//}
 
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.ServerError(w, r, err)
-	}
-
-	// Plain-text response body
-	//fmt.Fprintf(w, "%+v", file)
+	// Use the render helper
+	app.Render(w, r, http.StatusOK, "view.tmpl.html", data)
 }
 
 // Handler for creating the files (test function, meant to be depricated later)
@@ -129,25 +85,12 @@ func (app *application) Latest(w http.ResponseWriter, r *http.Request) {
 	//	fmt.Fprintf(w, "%+v\n", file)
 	//}
 
-	data := templateData{
-		Files: files,
-	}
+	//data := templateData{
+	//	Files: files,
+	//}
+	data := app.newTemplateData(r)
+	data.Files = files
 
-	var templateFiles = []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/pages/latest.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-	}
-
-	ts, err := template.ParseFiles(templateFiles...)
-	if err != nil {
-		app.ServerError(w, r, err)
-		return
-	}
-
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.ServerError(w, r, err)
-	}
-
+	// Use the new render helper
+	app.Render(w, r, http.StatusOK, "latest.tmpl.html", data)
 }

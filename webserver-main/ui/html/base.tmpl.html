@@ -7,6 +7,7 @@
         <title>{{template "title" .}} - Debut Web-application</title>
         <link rel="stylesheet" href="/static/css/main.css">
         <link rel="shortcut icon" href="/static/img/favicon.ico" type="image/x-icon">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700">
     </head>
     <body>
         <header>
@@ -16,7 +17,10 @@
         <main>
             {{template "main" .}}
         </main>
-        <footer>Author: <a href="https://github.com/komardinec">komardinec</a></footer>
+        <footer>
+            Author: <a href="https://github.com/komardinec">komardinec</a> | 
+            Powered by <a href="https://go.dev/">GOlang</a> in {{.CurrentYear}}
+        </footer>
         <script src="/static/js/main.js" type="text/javascript"></script>
     </body>
 </html>
