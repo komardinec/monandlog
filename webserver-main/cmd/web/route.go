@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/justinas/alice"
@@ -34,22 +33,4 @@ func (app *application) Route() http.Handler {
 
 	// Apply middlewareChain to servemux
 	return middlewareChain.Then(mux)
-}
-
-func (app *application) RecoverPanic(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Differed function will execute if pamic will occur in code,
-		// and will always run as Go unwinds the call stack
-		defer func() {
-			// Built-in recover function will check if there has been a panic
-			if err := recover(); err != nil {
-				// Set a "Connection: close" header on the response.
-				w.Header().Set("Connection", "close")
-				// Call of the ServerError method will return a 500 Internal Server Error
-				app.ServerError(w, r, fmt.Errorf("%s", err))
-			}
-		}()
-
-		next.ServeHTTP(w, r)
-	})
 }
