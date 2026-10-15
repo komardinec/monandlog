@@ -10,8 +10,6 @@ import (
 )
 
 func (app *application) HomePage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Server", "GO v1.27.x")
-
 	data := app.newTemplateData(r)
 
 	app.Render(w, r, http.StatusOK, "home.tmpl.html", data)
@@ -41,27 +39,39 @@ func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.File = file
 
-	//data := templateData{
-	//	File: file,
-	//}
-
 	// Use the render helper
 	app.Render(w, r, http.StatusOK, "view.tmpl.html", data)
 }
 
 // Handler for creating the files (test function, meant to be depricated later)
 func (app *application) CreateFile(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("File creation form"))
+	data := app.newTemplateData(r)
+
+	app.Render(w, r, http.StatusOK, "create.tmpl.html", data)
 }
 
 // Handler to work with POST method while creating a new file (test function, meant to be depricated later)
 func (app *application) CreateFilePost(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Add("Server", "Test Go Backend Server")
-	//w.Header().Add("Author", "komardinec")
+	// Parse form content and populate PostForm() map from POST request body
+	// Also works for PUT and PATCH
+	err := r.ParseForm()
+	if err != nil {
+		app.ClientError(w, http.StatusBadRequest)
+		return
+	}
 
-	title := "POST test DB insert"
-	content := "I am thou, thou art I"
-	expires := 365
+	// Retreive title and content from PostForm() map
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+
+	// Because r.PostForm.Get() always return string type value,
+	// we have to convert it to the integer type, so day count can be
+	// represented correctly
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.ClientError(w, http.StatusBadRequest)
+		return
+	}
 
 	id, err := app.dbWebApp.Insert(title, content, expires)
 	if err != nil {
@@ -81,13 +91,6 @@ func (app *application) Latest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//for _, file := range files {
-	//	fmt.Fprintf(w, "%+v\n", file)
-	//}
-
-	//data := templateData{
-	//	Files: files,
-	//}
 	data := app.newTemplateData(r)
 	data.Files = files
 
