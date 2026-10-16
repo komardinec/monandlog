@@ -9,11 +9,12 @@ import (
 )
 
 // Define a templateData type to act as the holding structure for
-// any dynamic data that we want to pass to our HTML templates.
+// any dynamic data that we want to pass inside our web server
 type templateData struct {
 	CurrentYear int
 	File        models.File
 	Files       []models.File
+	Form        any
 }
 
 // niceDate will return pretty formatted string

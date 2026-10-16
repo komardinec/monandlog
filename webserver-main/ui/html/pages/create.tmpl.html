@@ -3,18 +3,24 @@
 {{define "main"}}
 <form action="/file/create" method="POST">
     <div>
-        <label>Title</label>
-        <input type="text" name="title">
+        <label>Title:</label>
+        {{with .Form.FieldErrors.title}}
+            <label class="error">{{.}}</label>
+        {{end}}
+        <input type="text" name="title" value="{{.Form.Title}}">
     </div>
     <div>
         <label>Content</label>
-        <textarea name="content"></textarea>
+        {{with .Form.FieldErrors.content}}
+            <label class="error">{{.}}</label>
+        {{end}}
+        <textarea name="content">{{.Form.Content}}</textarea>
     </div>
     <div>
         <label>Expires in:</label>
-        <input type="radio" name="expires" value="365" checked> 365 days
-        <input type="radio" name="expires" value="7"> 7 days
-        <input type="radio" name="expires" value="1"> 1 day
+        <input type="radio" name="expires" value="365" {{if (eq .Form.Expires 365)}}checked{{end}}> 365 days
+        <input type="radio" name="expires" value="7" {{if (eq .Form.Expires 7)}}checked{{end}}> 7 days
+        <input type="radio" name="expires" value="1" {{if (eq .Form.Expires 1)}}checked{{end}}> 1 day
     </div>
     <div>
         <input type="submit" value="Submit">
