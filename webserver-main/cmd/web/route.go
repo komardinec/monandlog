@@ -21,16 +21,21 @@ func (app *application) Route() http.Handler {
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer)) // http.StripPrefix() will remove "/static" from a filesystem path
 	// to make possible looking for a files inside ./ui/static/ sub-directory
 
-	// then register WelcomeTest as a handler for root pattern "/"
-	mux.HandleFunc("GET /{$}", app.HomePage) // restrict catch-all to match "/" only
-	mux.HandleFunc("GET /file/view/{id}", app.ViewFile)
-	mux.HandleFunc("GET /file/view/latest", app.Latest)
-	mux.HandleFunc("GET /file/create", app.CreateFile)
-	mux.HandleFunc("POST /file/create", app.CreateFilePost)
+	// Create dynamicMiddlewareChain specific to our
+	// dynamic application routes.
+	dynamicMiddlewareChain := alice.New(app.sessionManager.LoadAndSave)
+
+	// Wrap handle in dynamicMiddlewareChain, notice that because .ThenFunc()
+	// returns a http.Handler (rather then http.HandlerFunc) we need to set mux.Handle (instead of mux.HandleFunc)
+	mux.Handle("GET /{$}", dynamicMiddlewareChain.ThenFunc(app.HomePage)) // restrict catch-all to match "/" only
+	mux.Handle("GET /file/view/{id}", dynamicMiddlewareChain.ThenFunc(app.ViewFile))
+	mux.Handle("GET /file/view-latest", dynamicMiddlewareChain.ThenFunc(app.Latest))
+	mux.Handle("GET /file/create", dynamicMiddlewareChain.ThenFunc(app.CreateFile))
+	mux.Handle("POST /file/create", dynamicMiddlewareChain.ThenFunc(app.CreateFilePost))
 
 	// Create middlewareChain which to be applied for every request application receives
-	middlewareChain := alice.New(app.RecoverPanic, app.ConnectionLogger, CommonHeaders)
+	staticMiddlewareChain := alice.New(app.RecoverPanic, app.ConnectionLogger, CommonHeaders)
 
 	// Apply middlewareChain to servemux
-	return middlewareChain.Then(mux)
+	return staticMiddlewareChain.Then(mux)
 }

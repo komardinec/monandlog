@@ -15,6 +15,7 @@ type templateData struct {
 	File        models.File
 	Files       []models.File
 	Form        any
+	Flash       string
 }
 
 // niceDate will return pretty formatted string

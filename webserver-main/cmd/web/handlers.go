@@ -5,17 +5,16 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 
 	models "debutwebapp.komardinec/internal/models"
+	validator "debutwebapp.komardinec/internal/validator"
 )
 
 type createFileForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors map[string]string
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) HomePage(w http.ResponseWriter, r *http.Request) {
@@ -45,8 +44,17 @@ func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Use the PopString() method to retreive the value for the "flash" key
+	// PopString() also deletes the key and value from the session data,
+	// so it acts like a one-time fetch. If there is no matching key in the session
+	// data this will return the empty string.
+	flash := app.sessionManager.PopString(r.Context(), "flash")
+
 	data := app.newTemplateData(r)
 	data.File = file
+
+	// Pass the flash to the template
+	data.Flash = flash
 
 	// Use the render helper
 	app.Render(w, r, http.StatusOK, "view.tmpl.html", data)
@@ -56,6 +64,8 @@ func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
 func (app *application) CreateFile(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
+	// Initialize a new createFileForm, this will generate fields with default nil
+	// values for type fields, or we can set our own default values
 	data.Form = createFileForm{
 		Expires: 365,
 	}
@@ -65,68 +75,55 @@ func (app *application) CreateFile(w http.ResponseWriter, r *http.Request) {
 
 // Handler to work with POST method while creating a new file (test function, meant to be depricated later)
 func (app *application) CreateFilePost(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("I AM INSIDE CREATEFILEPOST. DO YOU SEE ME??????????????")
+	// Declare a new empty instance if the createFileForm struct
+	var form createFileForm
+
 	// Parse form content and populate PostForm() map from POST request body
 	// Also works for PUT and PATCH
-	err := r.ParseForm()
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.ClientError(w, http.StatusBadRequest)
 		return
 	}
 
-	// Because r.PostForm.Get() always return string type value,
-	// we have to convert it to the integer type, so day count can be
-	// represented correctly
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	// Call the Decode() method of the form decoder, passing in the current
+	// request and a POINTER to our createFileForm struct.
+	// This will essentially fill the struct with the relevant values from the HTML form.
+	// If there is a problem, we return 400 Bad Request response to the client
+	err = app.formDecoder.Decode(&form, r.PostForm)
 	if err != nil {
 		app.ClientError(w, http.StatusBadRequest)
 		return
 	}
 
-	title := r.PostForm.Get("title")
-	//app.logger.Info("debug value", "title", title)
-	fmt.Println("title: ", title)
-	// Get part of form values straight from PostForm, others will be
-	// added here after some preparation
-	form := createFileForm{
-		//Title:       r.PostForm.Get("title"),
-		Title:       title,
-		Content:     r.PostForm.Get("content"),
-		Expires:     expires,
-		FieldErrors: map[string]string{},
-	}
+	// Now validator struct are included inside form variable, and we can use
+	// form.CheckField() to check and add new errors to error map
+	// validator functions with functionality for checking the specific
+	// type of error. And also, because it is all happens inside one structure,
+	// any values or functions inside it, are shared between each other.
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must be equal 1, 7, or 365")
 
-	// Check if title field is not empty or bigger than 100 characters
-	if strings.TrimSpace(form.Title) == "" {
-		form.FieldErrors["title"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(form.Title) > 100 { // here we will be checking by counting UNICODE symbols,
-		// to only count real character
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
-	}
-
-	// Check if content field is not empty
-	if strings.TrimSpace(form.Content) == "" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	}
-
-	// Check if expires are matching are required day period
-	if expires != 1 && expires != 7 && expires != 365 {
-		form.FieldErrors["expires"] = "This field must equal 1, 7 or 365"
-	}
-
-	// If error map are have some errors, dump them as plain HTTP response
-	if len(form.FieldErrors) > 0 {
+	// If form validation function will fail, server will render the error for user
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.Render(w, r, http.StatusUnprocessableEntity, "create.tmpl.html", data)
 		return
 	}
 
+	// Data source for db model will be from form structure entity
 	id, err := app.dbWebApp.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.ServerError(w, r, err)
 		return
 	}
+
+	// Use the Put() method to add a string value and the corresponding value
+	// to the session data. Used to say that file has been created.
+	app.sessionManager.Put(r.Context(), "flash", "File sucessfully created!")
 
 	http.Redirect(w, r, fmt.Sprintf("/file/view/%d", id), http.StatusSeeOther)
 }

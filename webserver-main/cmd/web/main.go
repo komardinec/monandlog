@@ -7,9 +7,13 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	// Import module package of interanl db module
 	models "debutwebapp.komardinec/internal/models"
+	"github.com/alexedwards/scs/mysqlstore"
+	scs "github.com/alexedwards/scs/v2"
+	form "github.com/go-playground/form/v4"
 
 	_ "github.com/go-sql-driver/mysql" // underscore is here because we don't need anything directly
 	// from mysql, except init() function of the driver. This is standard practice for most GO's SQL drivers.
@@ -17,9 +21,11 @@ import (
 
 // Application dependencies struct to hold the application-wide dependencies
 type application struct {
-	logger        *slog.Logger
-	dbWebApp      *models.WebAppModel
-	templateCache map[string]*template.Template
+	logger         *slog.Logger
+	dbWebApp       *models.WebAppModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 type serverConfigStruct struct {
@@ -80,11 +86,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	formDecoder := form.NewDecoder()
+
+	// Use the scs.New() function to initialize a new session manager.
+	// Then we configure it to use our MySQL database as the session store
+	// and set a lifetime of 1 hour (so that sessions automatically expire
+	// 1 hour after first being created).
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	// Initialize a new instance of application struct, containing dependencies for structured logging
 	app := &application{
-		logger:        logger,
-		dbWebApp:      &models.WebAppModel{DB: db},
-		templateCache: templateCache,
+		logger:         logger,
+		dbWebApp:       &models.WebAppModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	// Use the http.ListenAndServe() function starts a new web server.
