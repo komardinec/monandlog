@@ -38,10 +38,10 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 	return nil
 }
 
-// Helper newTemplateData() used to generate data structure with the current date.
 func (app *application) newTemplateData(r *http.Request) templateData {
 	return templateData{
 		CurrentYear: time.Now().Year(),
+		Flash:       app.sessionManager.PopString(r.Context(), "flash"),
 	}
 }
 

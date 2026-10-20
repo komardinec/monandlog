@@ -44,17 +44,8 @@ func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the PopString() method to retreive the value for the "flash" key
-	// PopString() also deletes the key and value from the session data,
-	// so it acts like a one-time fetch. If there is no matching key in the session
-	// data this will return the empty string.
-	flash := app.sessionManager.PopString(r.Context(), "flash")
-
 	data := app.newTemplateData(r)
 	data.File = file
-
-	// Pass the flash to the template
-	data.Flash = flash
 
 	// Use the render helper
 	app.Render(w, r, http.StatusOK, "view.tmpl.html", data)
@@ -142,4 +133,26 @@ func (app *application) Latest(w http.ResponseWriter, r *http.Request) {
 
 	// Use the new render helper
 	app.Render(w, r, http.StatusOK, "latest.tmpl.html", data)
+}
+
+// Authentification and authorization section
+
+func (app *application) UserSignup(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "signup form for users")
+}
+
+func (app *application) UserSignupPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "POST method for user creation")
+}
+
+func (app *application) UserLogin(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "login form for user")
+}
+
+func (app *application) UserLoginPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "authenticate and login user, verify against our information")
+}
+
+func (app *application) UserLogoutPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "logout user, close session")
 }

@@ -33,6 +33,13 @@ func (app *application) Route() http.Handler {
 	mux.Handle("GET /file/create", dynamicMiddlewareChain.ThenFunc(app.CreateFile))
 	mux.Handle("POST /file/create", dynamicMiddlewareChain.ThenFunc(app.CreateFilePost))
 
+	// User authentification and authorization handler paths, wrapped inside middleware chain.
+	mux.Handle("GET /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignup))
+	mux.Handle("POST /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignupPost))
+	mux.Handle("GET /user/login", dynamicMiddlewareChain.ThenFunc(app.UserLogin))
+	mux.Handle("POST /user/login", dynamicMiddlewareChain.ThenFunc(app.UserLoginPost))
+	mux.Handle("POST /user/logout", dynamicMiddlewareChain.ThenFunc(app.UserLogoutPost))
+
 	// Create middlewareChain which to be applied for every request application receives
 	staticMiddlewareChain := alice.New(app.RecoverPanic, app.ConnectionLogger, CommonHeaders)
 
