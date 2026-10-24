@@ -31,7 +31,7 @@ var functions = template.FuncMap{
 	"NiceDate": NiceDate,
 }
 
-func newTemplateCache() (map[string]*template.Template, error) {
+func NewTemplateCache() (map[string]*template.Template, error) {
 	// Initialize a new map to act as the cache
 	cache := map[string]*template.Template{}
 

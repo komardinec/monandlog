@@ -24,6 +24,7 @@ import (
 type application struct {
 	logger         *slog.Logger
 	dbWebApp       *models.WebAppModel
+	users          *models.UserModel
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
@@ -81,7 +82,7 @@ func main() {
 	defer db.Close()
 
 	// Initialize a new template cache
-	templateCache, err := newTemplateCache()
+	templateCache, err := NewTemplateCache()
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
@@ -102,6 +103,7 @@ func main() {
 	app := &application{
 		logger:         logger,
 		dbWebApp:       &models.WebAppModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,

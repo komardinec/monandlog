@@ -13,7 +13,7 @@ import (
 
 // Create a new decodePostForm() helper method. The second parameter here, dst.
 // is the target destination that we want to decode the form data into
-func (app *application) decodePostForm(r *http.Request, dst any) error {
+func (app *application) DecodePostForm(r *http.Request, dst any) error {
 	// Call ParseForm() on the request, in the same way that we did in our
 	// CreateFilePost handler
 	err := r.ParseForm()
@@ -38,7 +38,7 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 	return nil
 }
 
-func (app *application) newTemplateData(r *http.Request) templateData {
+func (app *application) NewTemplateData(r *http.Request) templateData {
 	return templateData{
 		CurrentYear: time.Now().Year(),
 		Flash:       app.sessionManager.PopString(r.Context(), "flash"),

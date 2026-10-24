@@ -40,9 +40,9 @@ func (app *application) Route() http.Handler {
 	mux.Handle("POST /user/login", dynamicMiddlewareChain.ThenFunc(app.UserLoginPost))
 	mux.Handle("POST /user/logout", dynamicMiddlewareChain.ThenFunc(app.UserLogoutPost))
 
-	// Create middlewareChain which to be applied for every request application receives
-	staticMiddlewareChain := alice.New(app.RecoverPanic, app.ConnectionLogger, CommonHeaders)
+	// Create generalMiddlewareChain which to be applied for every request application receives
+	generalMiddlewareChain := alice.New(app.RecoverPanic, app.ConnectionLogger, CommonHeaders)
 
 	// Apply middlewareChain to servemux
-	return staticMiddlewareChain.Then(mux)
+	return generalMiddlewareChain.Then(mux)
 }

@@ -1,7 +1,16 @@
 {{define "nav"}}
 <nav>
-    <a href="/">Home</a>
-    <a href="/file/view-latest">Latest</a>
-    <a href="/file/create">New file</a>
+    <div>
+        <a href="/">Home</a>
+        <a href="/file/view-latest">Latest</a>
+        <a href="/file/create">New file</a>
+    </div>
+    <div>
+        <a href="/user/signup">SignUp</a>
+        <a href="/user/login">Login</a>
+        <form action="/user/logout" method="POST">
+            <button>Logout</button>
+        </form>
+    </div>
 </nav>
 {{end}}
