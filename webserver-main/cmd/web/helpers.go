@@ -40,8 +40,9 @@ func (app *application) DecodePostForm(r *http.Request, dst any) error {
 
 func (app *application) NewTemplateData(r *http.Request) templateData {
 	return templateData{
-		CurrentYear: time.Now().Year(),
-		Flash:       app.sessionManager.PopString(r.Context(), "flash"),
+		CurrentYear:     time.Now().Year(),
+		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.IsAuthenticated(r),
 	}
 }
 
@@ -60,6 +61,12 @@ func (app *application) ServerError(w http.ResponseWriter, r *http.Request, err 
 // The ClientError helper sends a specific status cod with corresonding description to the user
 func (app *application) ClientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
+}
+
+// Return true of user are authenticated (have an user ID in context), otherwise
+// false
+func (app *application) IsAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }
 
 func (app *application) Render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {

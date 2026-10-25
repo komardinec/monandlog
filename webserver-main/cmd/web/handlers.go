@@ -18,9 +18,9 @@ type createFileForm struct {
 }
 
 type userSignupForm struct {
-	Name                string `form:"title"`
-	Email               string `form:"title"`
-	Password            string `form:"title"`
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
 	validator.Validator `form:"-"`
 }
 
@@ -161,7 +161,7 @@ func (app *application) UserSignupPost(w http.ResponseWriter, r *http.Request) {
 	// Declare an zero-valued instance of our userSignupForm stryct
 	var form userSignupForm
 
-	// Parse the form data into the userSignupForm
+	// Parse the form data into the userSignupForadm
 	err := app.DecodePostForm(r, &form)
 	if err != nil {
 		app.ClientError(w, http.StatusBadRequest)
@@ -266,10 +266,27 @@ func (app *application) UserLoginPost(w http.ResponseWriter, r *http.Request) {
 	// now we are counted as logged in
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 
+	app.sessionManager.Put(r.Context(), "flash", "Succesfully logged in!")
+
 	// Redirect to Home page
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (app *application) UserLogoutPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "logout user, close session")
+	// Renew session ID, because we changed the session status
+	err := app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.ServerError(w, r, err)
+		return
+	}
+
+	// Remove the authenticatedUserID from the session data so the user
+	// is logged out
+	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
+
+	// Add a flash message, about out logout
+	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
+
+	// Redirect to home page
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
