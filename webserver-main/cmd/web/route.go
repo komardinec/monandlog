@@ -23,22 +23,25 @@ func (app *application) Route() http.Handler {
 
 	// Create dynamicMiddlewareChain specific to our
 	// dynamic application routes.
-	dynamicMiddlewareChain := alice.New(app.sessionManager.LoadAndSave)
+	dynamicMiddlewareChain := alice.New(app.sessionManager.LoadAndSave, NoSurf, app.Authenticate)
 
 	// Wrap handle in dynamicMiddlewareChain, notice that because .ThenFunc()
 	// returns a http.Handler (rather then http.HandlerFunc) we need to set mux.Handle (instead of mux.HandleFunc)
 	mux.Handle("GET /{$}", dynamicMiddlewareChain.ThenFunc(app.HomePage)) // restrict catch-all to match "/" only
-	mux.Handle("GET /file/view/{id}", dynamicMiddlewareChain.ThenFunc(app.ViewFile))
-	mux.Handle("GET /file/view-latest", dynamicMiddlewareChain.ThenFunc(app.Latest))
-	mux.Handle("GET /file/create", dynamicMiddlewareChain.ThenFunc(app.CreateFile))
-	mux.Handle("POST /file/create", dynamicMiddlewareChain.ThenFunc(app.CreateFilePost))
-
-	// User authentification and authorization handler paths, wrapped inside middleware chain.
 	mux.Handle("GET /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignup))
 	mux.Handle("POST /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignupPost))
 	mux.Handle("GET /user/login", dynamicMiddlewareChain.ThenFunc(app.UserLogin))
 	mux.Handle("POST /user/login", dynamicMiddlewareChain.ThenFunc(app.UserLoginPost))
-	mux.Handle("POST /user/logout", dynamicMiddlewareChain.ThenFunc(app.UserLogoutPost))
+
+	// Authentification only aplication routes will use this chain,
+	// it contains everything inside dynamic chain + defensive authentification middleware
+	protectedMiddlewareChain := dynamicMiddlewareChain.Append(app.RequireAuthentication)
+
+	mux.Handle("GET /file/view/{id}", protectedMiddlewareChain.ThenFunc(app.ViewFile))
+	mux.Handle("GET /file/view-latest", protectedMiddlewareChain.ThenFunc(app.Latest))
+	mux.Handle("GET /file/create", protectedMiddlewareChain.ThenFunc(app.CreateFile))
+	mux.Handle("POST /file/create", protectedMiddlewareChain.ThenFunc(app.CreateFilePost))
+	mux.Handle("POST /user/logout", protectedMiddlewareChain.ThenFunc(app.UserLogoutPost))
 
 	// Create generalMiddlewareChain which to be applied for every request application receives
 	generalMiddlewareChain := alice.New(app.RecoverPanic, app.ConnectionLogger, CommonHeaders)

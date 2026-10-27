@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-playground/form/v4"
+	"github.com/justinas/nosurf"
 )
 
 // Create a new decodePostForm() helper method. The second parameter here, dst.
@@ -43,6 +44,7 @@ func (app *application) NewTemplateData(r *http.Request) templateData {
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.IsAuthenticated(r),
+		CSRFToken:       nosurf.Token(r),
 	}
 }
 
@@ -66,7 +68,12 @@ func (app *application) ClientError(w http.ResponseWriter, status int) {
 // Return true of user are authenticated (have an user ID in context), otherwise
 // false
 func (app *application) IsAuthenticated(r *http.Request) bool {
-	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	isAuthenticated, ok := r.Context().Value(IsAuthenticatedContextKey).(bool)
+	if !ok {
+		return false
+	}
+
+	return isAuthenticated
 }
 
 func (app *application) Render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
