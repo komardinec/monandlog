@@ -2,10 +2,12 @@ package main
 
 import (
 	"html/template"
+	"io/fs"
 	"path/filepath"
 	"time"
 
 	models "debutwebapp.komardinec/internal/models"
+	ui "debutwebapp.komardinec/ui"
 )
 
 // Define a templateData type to act as the holding structure for
@@ -37,11 +39,11 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 	// Initialize a new map to act as the cache
 	cache := map[string]*template.Template{}
 
-	// filepath.Glob() function to get a slice of all filepath that
-	// match pattern "./ui/html/pages/*.tmpl.html".
-	// This is essentially gives us a slice of all the filepath for
-	// pages templates.
-	pages, err := filepath.Glob("./ui/html/pages/*.tmpl.html")
+	// The fs.Glob() to get a slice of all filepaths in the ui.Files embedded
+	// filesystem which match the pattern "html/pages/*.tmpl.html". This
+	// essentially gives us a slice of all thee "page" templates for the application, just
+	// like before
+	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl.html")
 	if err != nil {
 		return nil, err
 	}
@@ -51,22 +53,16 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 		// Extract the filename and assign to variable
 		name := filepath.Base(page)
 
-		// Parse the base template file into a template set
-		// The template.FuncMap must be registered with the template set before we call
-		// the ParseFile() method
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl.html")
-		if err != nil {
-			return nil, err
+		// Create a slice containing the filepath patterns for the templates we
+		// want to parse
+		patterns := []string{
+			"html/base.tmpl.html",
+			"html/partials/*.tmpl.html",
+			page,
 		}
 
-		// Parse the files into a template set.
-		ts, err = ts.ParseGlob("./ui/html/partials/*.tmpl.html")
-		if err != nil {
-			return nil, err
-		}
-
-		// Call ParseFiles() on the tempalate set to add the page template
-		ts, err = ts.ParseFiles(page)
+		// Use ParseFS() to parse the templates from the ui.Files embedded filesystem
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			return nil, err
 		}
