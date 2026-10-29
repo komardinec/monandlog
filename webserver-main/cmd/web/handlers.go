@@ -290,3 +290,8 @@ func (app *application) UserLogoutPost(w http.ResponseWriter, r *http.Request) {
 	// Redirect to home page
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+// Ping handler, that are used to check if our server are alive
+func Ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Pong"))
+}

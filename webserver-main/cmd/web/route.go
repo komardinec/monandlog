@@ -24,6 +24,9 @@ func (app *application) Route() http.Handler {
 	// file will be served (so long as it exists).
 	mux.Handle("GET /static/", http.FileServerFS(ui.Files))
 
+	// Register test handlers for server
+	mux.HandleFunc("GET /ping", Ping)
+
 	// Create dynamicMiddlewareChain specific to our
 	// dynamic application routes.
 	dynamicMiddlewareChain := alice.New(app.sessionManager.LoadAndSave, NoSurf, app.Authenticate)
