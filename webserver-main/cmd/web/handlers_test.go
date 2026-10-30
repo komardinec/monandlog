@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -43,35 +42,22 @@ func TestPingInternal(t *testing.T) {
 }
 
 func TestPingE2E(t *testing.T) {
-	// Create a new instance of application struct.
-	app := &application{
-		logger: slog.New(slog.DiscardHandler),
-	}
+	// Invoke new application instance by using helper
+	app := NewTestApplication(t)
 
 	// We then use the httptest.NewTLSServer() function to create
 	// a new test server, passing in the value returned by our app.Route()
 	// method as the handler for the server. This starts ip a HTTPS server which listens
 	// to a random-chosen port of our local machine for the duration of the test.
-	ts := httptest.NewTLSServer(app.Route())
+	// This is being now invoked by a helper, which are accepting arguments
+	// with type *testing.T and handler
+	ts := NewTestServer(t, app.Route())
 	defer ts.Close()
 
-	// The network address that the test server is listening on is contained in
-	// the ts.URL field. We can use this along with the ts.Client().Get() method
-	// to make a GET /ping request against the test server. This returns a
-	// http.Response struct containing the response
-	rs, err := ts.Client().Get(ts.URL + "/ping")
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Call helper ts.Get() method for test server
+	// to test how well GET requests are made to it
+	code, _, body := ts.Get(t, "/ping")
 
-	assert.Equal(t, rs.StatusCode, http.StatusOK)
-
-	defer rs.Body.Close()
-	body, err := io.ReadAll(rs.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	body = bytes.TrimSpace(body)
-
-	assert.Equal(t, string(body), "Pong")
+	assert.Equal(t, code, http.StatusOK)
+	assert.Equal(t, body, "Pong")
 }
