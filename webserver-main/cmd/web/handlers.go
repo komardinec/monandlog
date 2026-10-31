@@ -44,7 +44,7 @@ func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the SnippetModel's Get() method to retreive the data for a
+	// Use the dbWebApp's Get() method to retreive the data for a
 	// specific record based on its ID. If no matching record is found,
 	// return a 404 Not Found response
 	file, err := app.dbWebApp.Get(id)

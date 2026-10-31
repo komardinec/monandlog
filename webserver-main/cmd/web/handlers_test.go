@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"debutwebapp.komardinec/internal/assert"
@@ -60,4 +61,202 @@ func TestPingE2E(t *testing.T) {
 
 	assert.Equal(t, code, http.StatusOK)
 	assert.Equal(t, body, "Pong")
+}
+
+func TestFileView(t *testing.T) {
+	// Create a new instance, which will contain the mocked
+	// dependencies
+	app := NewTestApplication(t)
+
+	// Establish a new test server for running E2E tests
+	// This spot can be a weak point of test understanding,
+	// to separate the production router from it's test counterpart,
+	// specifically for test utils we have created a test router, where we can run
+	// all the tests without authentification quirks (yes, this is a main problem here).
+	// As a different approach, we can read some kind of flag or variable inside our code.
+	ts := NewTestServer(t, app.TestRoute())
+	defer ts.Close()
+
+	// Table driven tests, to check the responses sent by our application
+	// expectedBody should not contain the symbols that can be used in XSS attacks
+	// otherwise http/tempate package will interpolate the into symbol sequence and we will
+	// get the test error
+	tests := []struct {
+		name         string
+		urlPath      string
+		expectedCode int
+		expectedBody string
+	}{
+		{
+			name:         "Valid ID",
+			urlPath:      "/file/view/1",
+			expectedCode: http.StatusOK,
+			expectedBody: "Do you hear me?",
+		},
+		{
+			name:         "Non-existent ID",
+			urlPath:      "/file/view/99",
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "Negative ID",
+			urlPath:      "/file/view/-1",
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "Decimal ID",
+			urlPath:      "/file/view/1.23",
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "String ID",
+			urlPath:      "/file/view/test",
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "Empty ID",
+			urlPath:      "/file/view/",
+			expectedCode: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, _, body := ts.Get(t, tt.urlPath)
+
+			assert.Equal(t, code, tt.expectedCode)
+
+			if tt.expectedBody != "" {
+				assert.StringContains(t, body, tt.expectedBody)
+			}
+		})
+	}
+
+}
+
+func TestUserSignup(t *testing.T) {
+	// Create the application struct containing the mocked dependencies
+	// and set up the test server for running E2E test
+	app := NewTestApplication(t)
+	ts := NewTestServer(t, app.TestRoute())
+	defer ts.Close()
+
+	// Make a GET to /user/signup handler and extract the CSRF token
+	// from its body
+	_, _, body := ts.Get(t, "/user/signup")
+	validCSRFToken := ExtractCSRFToken(t, body)
+
+	// Log the CSRF token value in our test output using the t.Logf()
+	// function. The t.Logf() function works in the same way as fmt.Printf(),
+	// but writes provided message to the test output
+	t.Logf("CSRF token is: %q", validCSRFToken)
+
+	const (
+		validName     = "Example"
+		validPassword = "P@ssw0rd"
+		validEmail    = "example@example.com"
+		formTag       = `<form action="/user/signup" method="POST" novalidate>`
+	)
+
+	tests := []struct {
+		name            string
+		userName        string
+		userEmail       string
+		userPassword    string
+		csrfToken       string
+		expectedCode    int
+		expectedFormTag string
+	}{
+		{
+			name:         "Valid submittion",
+			userName:     validName,
+			userEmail:    validEmail,
+			userPassword: validPassword,
+			csrfToken:    validCSRFToken,
+			expectedCode: http.StatusSeeOther,
+		},
+		{
+			name:         "Invalid CSRF Token",
+			userName:     validName,
+			userEmail:    validEmail,
+			userPassword: validPassword,
+			csrfToken:    "wrong token 123",
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:            "Empty Name",
+			userName:        "",
+			userEmail:       validEmail,
+			userPassword:    validPassword,
+			csrfToken:       validCSRFToken,
+			expectedCode:    http.StatusUnprocessableEntity,
+			expectedFormTag: formTag,
+		},
+		{
+			name:            "Empty Email",
+			userName:        validName,
+			userEmail:       "",
+			userPassword:    validPassword,
+			csrfToken:       validCSRFToken,
+			expectedCode:    http.StatusUnprocessableEntity,
+			expectedFormTag: formTag,
+		},
+		{
+			name:            "Empty Password",
+			userName:        validName,
+			userEmail:       validEmail,
+			userPassword:    "",
+			csrfToken:       validCSRFToken,
+			expectedCode:    http.StatusUnprocessableEntity,
+			expectedFormTag: formTag,
+		},
+		{
+			name:            "Invalid Email",
+			userName:        validName,
+			userEmail:       "example@exam.lecom",
+			userPassword:    validPassword,
+			csrfToken:       validCSRFToken,
+			expectedCode:    http.StatusUnprocessableEntity,
+			expectedFormTag: formTag,
+		},
+		{
+			name:            "Short Password",
+			userName:        validName,
+			userEmail:       validEmail,
+			userPassword:    "ass",
+			csrfToken:       validCSRFToken,
+			expectedCode:    http.StatusUnprocessableEntity,
+			expectedFormTag: formTag,
+		},
+		{
+			name:            "Duplicate Email",
+			userName:        validName,
+			userEmail:       "dupe@dupe.com",
+			userPassword:    validPassword,
+			csrfToken:       validCSRFToken,
+			expectedCode:    http.StatusUnprocessableEntity,
+			expectedFormTag: formTag,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Logf("name: %v, userName: %v, userEmail: %v, userPassword: %v, csrfToken: %v, expectedCode: %v, expectedFormTag: %v", tt.name, tt.userName, tt.userEmail, tt.userPassword, tt.csrfToken, tt.expectedCode, tt.expectedFormTag)
+		t.Run(tt.name, func(t *testing.T) {
+			form := url.Values{}
+			form.Add("name", tt.userName)
+			form.Add("email", tt.userEmail)
+			form.Add("password", tt.userPassword)
+			form.Add("csrf_token", tt.csrfToken)
+
+			t.Logf("form: %v", form)
+
+			code, _, body := ts.PostForm(t, "/user/signup", form)
+
+			assert.Equal(t, code, tt.expectedCode)
+
+			if tt.expectedFormTag != "" {
+				assert.StringContains(t, body, tt.expectedFormTag)
+			}
+		})
+	}
 }

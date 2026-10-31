@@ -60,7 +60,7 @@ func (app *application) RequireAuthentication(next http.Handler) http.Handler {
 		// return from the middleware chain so that no subsequent handlers in
 		// the chain are executed.
 		if !app.IsAuthenticated(r) {
-			app.sessionManager.Put(r.Context(), "flash", "We don't know who you are. Enter into your account first!")
+			app.sessionManager.Put(r.Context(), "flash", "We don't know who you are. Login into your account first!")
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 			return
 		}

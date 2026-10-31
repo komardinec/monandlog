@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+type WebAppModelInterface interface {
+	Insert(title string, content string, expires int) (int, error)
+	Get(id int) (File, error)
+	Latest() ([]File, error)
+}
+
 // Define a File type structure for an individual file.
 // That structure formed to correspond to the fields in database fields
 type File struct {
@@ -37,7 +43,7 @@ func (m *WebAppModel) Insert(title string, content string, expires int) (int, er
 	}
 
 	// Use the LastInsertId() method on the result to get the ID of our
-	// newly inserted record in the snippets table.
+	// newly inserted record in the file table.
 	id, err := result.LastInsertId()
 	if err != nil {
 		return 0, err
@@ -64,7 +70,7 @@ func (m *WebAppModel) Get(id int) (File, error) {
 	var f File
 
 	// Use row.Scan() to copy the values from each field in sql.Row
-	// to the corresponing field in the Snippet struct.
+	// to the corresponing field in the file struct.
 	// Important details: arguments must be pointers and exactly,
 	// the same as the number of columns returned by statement
 	err := row.Scan(&f.ID, &f.Title, &f.Content, &f.Created, &f.Expires)
@@ -80,7 +86,7 @@ func (m *WebAppModel) Get(id int) (File, error) {
 			return File{}, err
 		}
 	}
-	// If everyting is ok, return the filled Snippet struct
+	// If everyting is ok, return the filled file struct
 	return f, nil
 }
 

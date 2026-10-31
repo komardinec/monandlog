@@ -23,8 +23,8 @@ import (
 // Application dependencies struct to hold the application-wide dependencies
 type application struct {
 	logger         *slog.Logger
-	dbWebApp       *models.WebAppModel
-	users          *models.UserModel
+	dbWebApp       models.WebAppModelInterface
+	users          models.UserModelInterface
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
