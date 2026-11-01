@@ -82,6 +82,13 @@ func NoSurf(next http.Handler) http.Handler {
 		Path:     "/",
 		Secure:   true,
 	})
+	csrfHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reason := nosurf.Reason(r)
+		fmt.Printf("CSRF Failure Reason is: %v\n", reason)
+
+		msg := "Error with anti-CSRF measures"
+		http.Error(w, msg, http.StatusBadRequest)
+	}))
 	return csrfHandler
 }
 

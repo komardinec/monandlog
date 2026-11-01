@@ -8,6 +8,7 @@ import (
 
 	models "debutwebapp.komardinec/internal/models"
 	validator "debutwebapp.komardinec/internal/validator"
+	"github.com/justinas/nosurf"
 )
 
 type createFileForm struct {
@@ -157,14 +158,18 @@ func (app *application) UserSignup(w http.ResponseWriter, r *http.Request) {
 	app.Render(w, r, http.StatusOK, "signup.tmpl.html", data)
 }
 
+func (app *application) FailureHandlerPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(nosurf.Reason(r))
+}
+
 func (app *application) UserSignupPost(w http.ResponseWriter, r *http.Request) {
-	// Declare an zero-valued instance of our userSignupForm stryct
+	// Declare an zero-valued instance of our userSignupForm struct
 	var form userSignupForm
 
-	// Parse the form data into the userSignupForadm
+	// Parse the form data into the userSignupForm
 	err := app.DecodePostForm(r, &form)
 	if err != nil {
-		app.ClientError(w, http.StatusBadRequest)
+		app.ClientError(w, http.StatusConflict)
 		return
 	}
 

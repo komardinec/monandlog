@@ -60,7 +60,7 @@ func (app *application) ServerError(w http.ResponseWriter, r *http.Request, err 
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
-// The ClientError helper sends a specific status cod with corresonding description to the user
+// The ClientError helper sends a specific status code with corresonding description to the user
 func (app *application) ClientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }

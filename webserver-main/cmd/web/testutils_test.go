@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -107,6 +108,7 @@ func (app *application) TestRoute() http.Handler {
 
 	// Every path in our test router will mimic real paths, this will reduce errors in
 	// code understanding
+	testMux.Handle("GET /{$}", dynamicMiddlewareChain.ThenFunc(app.ViewFile))
 	testMux.Handle("GET /file/view/{id}", dynamicMiddlewareChain.ThenFunc(app.ViewFile))
 	testMux.Handle("GET /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignup))
 	testMux.Handle("POST /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignupPost))
@@ -132,19 +134,27 @@ func ExtractCSRFToken(t *testing.T, body string) string {
 // Create a PostForm method for sending POST requests to the test server. The final parameter to this
 // method us a url.Values object which can contain any form data that we want to send in the req body
 func (ts *testServer) PostForm(t *testing.T, urlPath string, form url.Values) (int, http.Header, string) {
-	rs, err := ts.Client().PostForm(ts.URL+urlPath, form)
+	t.Helper()
+	reqbody := strings.NewReader(form.Encode())
+	req, err := http.NewRequest(http.MethodPost, ts.URL+urlPath, reqbody)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Read the response body from the test server
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Referer", ts.URL+urlPath)
+
+	rs, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	defer rs.Body.Close()
-	body, err := io.ReadAll(rs.Body)
+	resbody, err := io.ReadAll(rs.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	body = bytes.TrimSpace(body)
+	resbody = bytes.TrimSpace(resbody)
 
-	// Return the response status, headers and body
-	return rs.StatusCode, rs.Header, string(body)
+	return rs.StatusCode, rs.Header, string(resbody)
 }

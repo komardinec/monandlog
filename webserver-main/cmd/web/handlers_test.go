@@ -135,27 +135,20 @@ func TestFileView(t *testing.T) {
 }
 
 func TestUserSignup(t *testing.T) {
-	// Create the application struct containing the mocked dependencies
-	// and set up the test server for running E2E test
 	app := NewTestApplication(t)
 	ts := NewTestServer(t, app.TestRoute())
 	defer ts.Close()
 
-	// Make a GET to /user/signup handler and extract the CSRF token
-	// from its body
 	_, _, body := ts.Get(t, "/user/signup")
-	validCSRFToken := ExtractCSRFToken(t, body)
+	csrfToken := ExtractCSRFToken(t, body)
 
-	// Log the CSRF token value in our test output using the t.Logf()
-	// function. The t.Logf() function works in the same way as fmt.Printf(),
-	// but writes provided message to the test output
-	t.Logf("CSRF token is: %q", validCSRFToken)
+	t.Logf("CSRF token is: %q", csrfToken)
 
 	const (
-		validName     = "Example"
+		validName     = "example"
 		validPassword = "P@ssw0rd"
 		validEmail    = "example@example.com"
-		formTag       = `<form action="/user/signup" method="POST" novalidate>`
+		formTag       = "<form action='/user/signup' method='POST' novalidate>"
 	)
 
 	tests := []struct {
@@ -168,19 +161,20 @@ func TestUserSignup(t *testing.T) {
 		expectedFormTag string
 	}{
 		{
-			name:         "Valid submittion",
+			name:         "Valid submission",
 			userName:     validName,
 			userEmail:    validEmail,
 			userPassword: validPassword,
-			csrfToken:    validCSRFToken,
+			csrfToken:    csrfToken,
 			expectedCode: http.StatusSeeOther,
 		},
 		{
+
 			name:         "Invalid CSRF Token",
 			userName:     validName,
 			userEmail:    validEmail,
 			userPassword: validPassword,
-			csrfToken:    "wrong token 123",
+			csrfToken:    "bruh",
 			expectedCode: http.StatusBadRequest,
 		},
 		{
@@ -188,59 +182,61 @@ func TestUserSignup(t *testing.T) {
 			userName:        "",
 			userEmail:       validEmail,
 			userPassword:    validPassword,
-			csrfToken:       validCSRFToken,
+			csrfToken:       csrfToken,
 			expectedCode:    http.StatusUnprocessableEntity,
 			expectedFormTag: formTag,
 		},
 		{
+
 			name:            "Empty Email",
 			userName:        validName,
 			userEmail:       "",
 			userPassword:    validPassword,
-			csrfToken:       validCSRFToken,
+			csrfToken:       csrfToken,
 			expectedCode:    http.StatusUnprocessableEntity,
 			expectedFormTag: formTag,
 		},
 		{
+
 			name:            "Empty Password",
 			userName:        validName,
 			userEmail:       validEmail,
 			userPassword:    "",
-			csrfToken:       validCSRFToken,
+			csrfToken:       csrfToken,
 			expectedCode:    http.StatusUnprocessableEntity,
 			expectedFormTag: formTag,
 		},
 		{
-			name:            "Invalid Email",
+
+			name:            "Invalid email",
 			userName:        validName,
-			userEmail:       "example@exam.lecom",
+			userEmail:       "example@edasd.",
 			userPassword:    validPassword,
-			csrfToken:       validCSRFToken,
+			csrfToken:       csrfToken,
 			expectedCode:    http.StatusUnprocessableEntity,
 			expectedFormTag: formTag,
 		},
 		{
-			name:            "Short Password",
+			name:            "Short password",
 			userName:        validName,
 			userEmail:       validEmail,
 			userPassword:    "ass",
-			csrfToken:       validCSRFToken,
+			csrfToken:       csrfToken,
 			expectedCode:    http.StatusUnprocessableEntity,
 			expectedFormTag: formTag,
 		},
 		{
-			name:            "Duplicate Email",
+			name:            "Duplicate email",
 			userName:        validName,
 			userEmail:       "dupe@dupe.com",
 			userPassword:    validPassword,
-			csrfToken:       validCSRFToken,
+			csrfToken:       csrfToken,
 			expectedCode:    http.StatusUnprocessableEntity,
 			expectedFormTag: formTag,
 		},
 	}
 
 	for _, tt := range tests {
-		t.Logf("name: %v, userName: %v, userEmail: %v, userPassword: %v, csrfToken: %v, expectedCode: %v, expectedFormTag: %v", tt.name, tt.userName, tt.userEmail, tt.userPassword, tt.csrfToken, tt.expectedCode, tt.expectedFormTag)
 		t.Run(tt.name, func(t *testing.T) {
 			form := url.Values{}
 			form.Add("name", tt.userName)
@@ -248,10 +244,7 @@ func TestUserSignup(t *testing.T) {
 			form.Add("password", tt.userPassword)
 			form.Add("csrf_token", tt.csrfToken)
 
-			t.Logf("form: %v", form)
-
 			code, _, body := ts.PostForm(t, "/user/signup", form)
-
 			assert.Equal(t, code, tt.expectedCode)
 
 			if tt.expectedFormTag != "" {
