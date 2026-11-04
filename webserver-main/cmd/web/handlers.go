@@ -283,6 +283,26 @@ func (app *application) UserLoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func (app *application) UserAccount(w http.ResponseWriter, r *http.Request) {
+	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	acc, err := app.users.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.sessionManager.Put(r.Context(), "flash", "We don't know who you are. Login into your account first!")
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		} else {
+			app.ServerError(w, r, err)
+		}
+		return
+	}
+
+	data := app.NewTemplateData(r)
+	data.User = acc
+
+	app.Render(w, r, http.StatusOK, "useraccount.tmpl.html", data)
+}
+
 func (app *application) UserLogoutPost(w http.ResponseWriter, r *http.Request) {
 	// Renew session ID, because we changed the session status
 	err := app.sessionManager.RenewToken(r.Context())

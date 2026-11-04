@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"time"
+
 	"debutwebapp.komardinec/internal/models"
 )
 
@@ -29,5 +31,20 @@ func (u *UserModel) Exists(id int) (bool, error) {
 		return true, nil
 	default:
 		return false, nil
+	}
+}
+
+func (u *UserModel) Get(id int) (models.User, error) {
+	switch id {
+	case 1:
+		user := models.User{
+			ID:      1,
+			Name:    "example",
+			Email:   "example@example.com",
+			Created: time.Now(),
+		}
+		return user, nil
+	default:
+		return models.User{}, models.ErrNoRecord
 	}
 }
