@@ -57,7 +57,12 @@ func (app *application) ServerError(w http.ResponseWriter, r *http.Request, err 
 	)
 
 	app.logger.Error(err.Error(), "method", method, "uri", uri, "trace", trace)
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	if app.serverFlags.debugMode {
+		errmsg := fmt.Sprintf("Server side captured an error!\nError message: %v\nTrace: %v", err.Error(), trace)
+		http.Error(w, errmsg, http.StatusInternalServerError)
+	} else {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 }
 
 // The ClientError helper sends a specific status code with corresonding description to the user

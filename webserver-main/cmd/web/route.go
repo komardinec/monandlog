@@ -34,6 +34,7 @@ func (app *application) Route() http.Handler {
 	// Wrap handle in dynamicMiddlewareChain, notice that because .ThenFunc()
 	// returns a http.Handler (rather then http.HandlerFunc) we need to set mux.Handle (instead of mux.HandleFunc)
 	mux.Handle("GET /{$}", dynamicMiddlewareChain.ThenFunc(app.HomePage)) // restrict catch-all to match "/" only
+	mux.Handle("GET /about", dynamicMiddlewareChain.ThenFunc(app.AboutPage))
 	mux.Handle("GET /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignup))
 	mux.Handle("POST /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignupPost))
 	mux.Handle("GET /user/login", dynamicMiddlewareChain.ThenFunc(app.UserLogin))

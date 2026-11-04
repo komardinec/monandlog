@@ -37,6 +37,12 @@ func (app *application) HomePage(w http.ResponseWriter, r *http.Request) {
 	app.Render(w, r, http.StatusOK, "home.tmpl.html", data)
 }
 
+func (app *application) AboutPage(w http.ResponseWriter, r *http.Request) {
+	data := app.NewTemplateData(r)
+
+	app.Render(w, r, http.StatusOK, "about.tmpl.html", data)
+}
+
 // Handler for viewing the files (test function, meant to be depricated later)
 func (app *application) ViewFile(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))

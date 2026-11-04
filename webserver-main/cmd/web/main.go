@@ -28,11 +28,13 @@ type application struct {
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
+	serverFlags    *serverConfigStruct
 }
 
 type serverConfigStruct struct {
 	serverPort   string
 	dbSourceName string
+	debugMode    bool
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -59,6 +61,7 @@ func main() {
 	// --- Flag section ---
 	flag.StringVar(&serverConfig.serverPort, "addr", ":8080", "HTTP Listen address (IP:Port).")
 	flag.StringVar(&serverConfig.dbSourceName, "dsn", "webserver:iamwebserver123@/debut?parseTime=true", "MySQL data source name")
+	flag.BoolVar(&serverConfig.debugMode, "debug", false, "Flag that enables the debug mode of application. Absence of that flag implying that debug mode is off, if flag is used, that means that debug mode is on.")
 
 	flag.Parse()
 
@@ -107,6 +110,7 @@ func main() {
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+		serverFlags:    &serverConfig,
 	}
 
 	// Initialize a tls.Config struct to hold the non-default TLS settings

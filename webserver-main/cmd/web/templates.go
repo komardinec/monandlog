@@ -22,7 +22,7 @@ type templateData struct {
 	CSRFToken       string
 }
 
-// niceDate will return pretty formatted string
+// NiceDate will return pretty formatted string
 // representation of a time.Time object
 func NiceDate(t time.Time) string {
 	// Return the empty string if time has the zero value
