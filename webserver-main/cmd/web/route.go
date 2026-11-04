@@ -49,6 +49,8 @@ func (app *application) Route() http.Handler {
 	mux.Handle("GET /file/create", protectedMiddlewareChain.ThenFunc(app.CreateFile))
 	mux.Handle("POST /file/create", protectedMiddlewareChain.ThenFunc(app.CreateFilePost))
 	mux.Handle("GET /user/account", protectedMiddlewareChain.ThenFunc(app.UserAccount))
+	mux.Handle("GET /user/account/password/change", protectedMiddlewareChain.ThenFunc(app.UserPasswordChange))
+	mux.Handle("POST /user/account/password/change", protectedMiddlewareChain.ThenFunc(app.UserPasswordChangePost))
 	mux.Handle("POST /user/logout", protectedMiddlewareChain.ThenFunc(app.UserLogoutPost))
 
 	// Create generalMiddlewareChain which to be applied for every request application receives
