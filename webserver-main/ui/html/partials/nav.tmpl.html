@@ -2,6 +2,7 @@
 <nav>
     <div>
         <a href="/">Home</a>
+        <a href="/about">About</a>
         {{if .IsAuthenticated}}
             <a href="/file/view-latest">Latest</a>
             <a href="/file/create">New file</a>
@@ -9,6 +10,7 @@
     </div>
     <div>
         {{if .IsAuthenticated}}
+            <a href="/user/account">Account</a>
             <form action="/user/logout" method="POST">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <button>Logout</button>

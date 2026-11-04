@@ -61,6 +61,7 @@ func (app *application) RequireAuthentication(next http.Handler) http.Handler {
 		// the chain are executed.
 		if !app.IsAuthenticated(r) {
 			app.sessionManager.Put(r.Context(), "flash", "We don't know who you are. Login into your account first!")
+			app.sessionManager.Put(r.Context(), "redirectPathAfterLogin", r.URL.Path)
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 			return
 		}

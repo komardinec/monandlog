@@ -34,6 +34,7 @@ func (app *application) Route() http.Handler {
 	// Wrap handle in dynamicMiddlewareChain, notice that because .ThenFunc()
 	// returns a http.Handler (rather then http.HandlerFunc) we need to set mux.Handle (instead of mux.HandleFunc)
 	mux.Handle("GET /{$}", dynamicMiddlewareChain.ThenFunc(app.HomePage)) // restrict catch-all to match "/" only
+	mux.Handle("GET /about", dynamicMiddlewareChain.ThenFunc(app.AboutPage))
 	mux.Handle("GET /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignup))
 	mux.Handle("POST /user/signup", dynamicMiddlewareChain.ThenFunc(app.UserSignupPost))
 	mux.Handle("GET /user/login", dynamicMiddlewareChain.ThenFunc(app.UserLogin))
@@ -47,6 +48,9 @@ func (app *application) Route() http.Handler {
 	mux.Handle("GET /file/view-latest", protectedMiddlewareChain.ThenFunc(app.Latest))
 	mux.Handle("GET /file/create", protectedMiddlewareChain.ThenFunc(app.CreateFile))
 	mux.Handle("POST /file/create", protectedMiddlewareChain.ThenFunc(app.CreateFilePost))
+	mux.Handle("GET /user/account", protectedMiddlewareChain.ThenFunc(app.UserAccount))
+	mux.Handle("GET /user/account/password/change", protectedMiddlewareChain.ThenFunc(app.UserPasswordChange))
+	mux.Handle("POST /user/account/password/change", protectedMiddlewareChain.ThenFunc(app.UserPasswordChangePost))
 	mux.Handle("POST /user/logout", protectedMiddlewareChain.ThenFunc(app.UserLogoutPost))
 
 	// Create generalMiddlewareChain which to be applied for every request application receives
