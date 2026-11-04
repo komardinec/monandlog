@@ -279,8 +279,14 @@ func (app *application) UserLoginPost(w http.ResponseWriter, r *http.Request) {
 
 	app.sessionManager.Put(r.Context(), "flash", "Succesfully logged in!")
 
-	// Redirect to Home page
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	welcomePage := app.sessionManager.PopString(r.Context(), "redirectPathAfterLogin")
+	if welcomePage != "" {
+		http.Redirect(w, r, welcomePage, http.StatusSeeOther)
+	} else {
+		// Redirect to Home page
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
 }
 
 func (app *application) UserAccount(w http.ResponseWriter, r *http.Request) {
