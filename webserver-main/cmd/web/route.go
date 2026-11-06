@@ -54,7 +54,7 @@ func (app *application) Route() http.Handler {
 	mux.Handle("POST /user/logout", protectedMiddlewareChain.ThenFunc(app.UserLogoutPost))
 
 	// Create generalMiddlewareChain which to be applied for every request application receives
-	generalMiddlewareChain := alice.New(app.RecoverPanic, app.ConnectionLogger, CommonHeaders)
+	generalMiddlewareChain := alice.New(app.RecoverPanic, app.ConnectionLogger, CommonHeaders, app.metricsServer.MetricsHTTPMiddleware)
 
 	// Apply middlewareChain to servemux
 	return generalMiddlewareChain.Then(mux)

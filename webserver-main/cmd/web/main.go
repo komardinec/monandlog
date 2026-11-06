@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	// Import module package of interanl db module
@@ -29,6 +30,7 @@ type application struct {
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
 	serverFlags    *serverConfigStruct
+	metricsServer  *Metrics
 }
 
 type serverConfigStruct struct {
@@ -56,6 +58,8 @@ func openDB(dsn string) (*sql.DB, error) {
 }
 
 func main() {
+	// Our servers will be in personal goroutines, so waitgroups will be handy
+	var wg sync.WaitGroup
 	var serverConfig serverConfigStruct
 
 	// --- Flag section ---
@@ -68,10 +72,7 @@ func main() {
 	// Create logger to write into terminal various messages regarding software actions and events
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true}))
 
-	// Print starting log message
-	logger.Info("Server is running", "address", serverConfig.serverPort)
-
-	// To keep the main() function opwnDB() function,
+	// To keep the main() function openDB() function,
 	// with code for creating a DB connection pool.
 	// We will get a DSN from a cmd flag
 	db, err := openDB(serverConfig.dbSourceName)
@@ -102,6 +103,11 @@ func main() {
 	sessionManager.Lifetime = 1 * time.Hour
 	sessionManager.Cookie.Secure = true
 
+	// Initialize metrics server with custom register from metrics model
+	metricsServer := NewCustomMetrics()
+	// Optionally we can set the listen adress of the metrics server
+	// metricsServer.Address = ":2112"
+
 	// Initialize a new instance of application struct, containing dependencies for structured logging
 	app := &application{
 		logger:         logger,
@@ -111,6 +117,7 @@ func main() {
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
 		serverFlags:    &serverConfig,
+		metricsServer:  metricsServer,
 	}
 
 	// Initialize a tls.Config struct to hold the non-default TLS settings
@@ -137,7 +144,18 @@ func main() {
 	// Based on information from documentation http.ListenAndServe always return
 	// non-nil error so if we something goes wrong logger.Error()
 	// will print it as a fatal error.
-	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
-	logger.Error(err.Error())
-	os.Exit(1)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// Print starting log message
+		logger.Info("Server is running. Ctrl + C to stop it...", "address", serverConfig.serverPort)
+		err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+		logger.Error(err.Error())
+		os.Exit(1)
+	}()
+	// Additional servers can fail as much as they want, while main server is still serving
+	// If main process fails, all additional subroutines will be closed too
+	metricsServer.MetricsListenAndServe()
+	wg.Wait()
 }
