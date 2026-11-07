@@ -64,7 +64,7 @@ func main() {
 
 	// --- Flag section ---
 	flag.StringVar(&serverConfig.serverPort, "addr", ":8080", "HTTP Listen address (IP:Port).")
-	flag.StringVar(&serverConfig.dbSourceName, "dsn", "webserver:iamwebserver123@/debut?parseTime=true", "MySQL data source name")
+	flag.StringVar(&serverConfig.dbSourceName, "dsn", "webserver:iamwebserver123@tcp(localhost:3306)/debut?parseTime=true", "MySQL data source name. DSN requires to have a login, password, host, port and database name.")
 	flag.BoolVar(&serverConfig.debugMode, "debug", false, "Flag that enables the debug mode of application. Absence of that flag implying that debug mode is off, if flag is used, that means that debug mode is on.")
 
 	flag.Parse()
@@ -150,7 +150,8 @@ func main() {
 		defer wg.Done()
 		// Print starting log message
 		logger.Info("Server is running. Ctrl + C to stop it...", "address", serverConfig.serverPort)
-		err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+		//err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+		err = srv.ListenAndServe()
 		logger.Error(err.Error())
 		os.Exit(1)
 	}()
