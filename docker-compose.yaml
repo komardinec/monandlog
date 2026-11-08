@@ -22,6 +22,9 @@ services:
       - ./config/nginx/ssl/selfsigned.crt:/etc/nginx/ssl/certs/selfsigned.crt
       - ./config/nginx/ssl/selfsigned.key:/etc/nginx/ssl/private/selfsigned.key
       - ./config/nginx/ssl/dhparam.pem:/etc/nginx/ssl/certs/dhparam.pem
+    networks:
+      - default
+      - inter-web-shared
     restart: unless-stopped
 
   prometheus:
@@ -148,3 +151,8 @@ volumes:
     driver: local
     #driver_opts:
     #  o: bind
+
+networks:
+  inter-web-shared:
+    external: true
+    name: inter-web-shared

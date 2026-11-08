@@ -19,6 +19,7 @@ RUN adduser -D webserver
 USER webserver
 
 COPY --from=builder /app/webserver .
+COPY --from=builder /app/ui .
 
 ENTRYPOINT ["./webserver"]
 CMD ["-addr=:8080"]
