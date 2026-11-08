@@ -1,0 +1,32 @@
+---
+version: "3.9"
+
+services:
+  mysql:
+    container_name: mysql
+    image: mysql@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8 # 9.7.4-oraclelinux9
+    environment:
+      MYSQL_ROOT_PASSWORD: "P@ssw0rd"
+      MYSQL_DATABASE: "debut"
+      MYSQL_USER: "webserver"
+      MYSQL_PASSWORD: "iamwebserver123"
+    volumes: 
+      - "mysql_data:/var/lib/mysql"
+      - "../config/mysql-init:/docker-entrypoint-initdb.d:ro"
+    restart: unless-stopped
+
+  kwebserver:
+    container_name: kwebserver
+    build: ../webserver-main
+    ports:
+      - "8443:8443"
+      - "127.0.0.1:2112:2112"
+      - "3306:3306"
+    command: ["-addr=:8443", "-dsn=webserver:iamwebserver123@tcp(mysql:3306)/debut?parseTime=true"]
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local

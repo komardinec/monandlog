@@ -11,7 +11,8 @@
     "poetry@latest",
     "gnused@latest",
     "docker@latest",
-    "docker-compose@latest"
+    "docker-compose@latest",
+    "go-migrate@4.18.2"
   ],
   "shell": {
     "init_hook": [
