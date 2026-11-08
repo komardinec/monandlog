@@ -7,6 +7,12 @@ positions:
 
 clients:
   - url: http://loki:3100/loki/api/v1/push
+    batchwait: 1s
+    batchsize: 1048576
+    backoff_config:
+      min_period: 350ms
+      max_period: 3s
+      max_retries: 20
 
 scrape_configs:
   - job_name: journald
@@ -15,7 +21,7 @@ scrape_configs:
       path: /var/log/journal
       labels:
         job: journald
-        host: localhost
+        host: nl-monitor-promtail
     relabel_configs:
       - source_labels: ["__journal__systemd_unit"]
         target_label: unit
@@ -42,6 +48,11 @@ scrape_configs:
       - json:
           expressions:
             level: level
+      - logfmt:
+          mapping:
+            extracted_level: level
+      - labels:
+          level: extracted_level
   
 #  - job_name: system
 #    static_configs:
