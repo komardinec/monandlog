@@ -53,6 +53,9 @@ services:
     depends_on:
       - node-exporter
       - cadvisor
+    networks:
+      - default
+      - inter-web-shared
     logging: *default-logging
   
   grafana:
