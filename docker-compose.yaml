@@ -27,6 +27,11 @@ services:
     networks:
       - default
       - inter-web-shared
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+      - 1.0.0.1
     restart: unless-stopped
 
   prometheus:
