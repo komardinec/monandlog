@@ -1,0 +1,11 @@
+groups:
+  - name: Instance_Alerts
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} is down"
+          description: "Prometheus is unable to scrape {{ $labels.instance  }} for more than 10 seconds."

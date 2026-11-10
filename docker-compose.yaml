@@ -24,6 +24,7 @@ services:
       #- ./config/nginx/ssl/selfsigned.crt:/etc/nginx/ssl/certs/selfsigned.crt
       #- ./config/nginx/ssl/selfsigned.key:/etc/nginx/ssl/private/selfsigned.key
       - ./config/nginx/ssl/dhparam.pem:/etc/nginx/ssl/certs/dhparam.pem
+      - ./config/nginx/.htpasswd:/etc/nginx/.htpasswd
     networks:
       - default
       - inter-web-shared
@@ -53,11 +54,24 @@ services:
     depends_on:
       - node-exporter
       - cadvisor
+      - alertmanager
     networks:
       - default
       - inter-web-shared
     logging: *default-logging
-  
+ 
+  alertmanager:
+    image: prom/alertmanager@sha256:bfd89fca95f0a1f913a5a6a293ffea077272a6179c97f24d58073233f6f19b4d
+    container_name: alertmanager
+    volumes:
+      - ./config/prometheus/alertmanager.yaml:/etc/alertmanager/alertmanager.yaml
+    ports:
+      - "127.0.0.1:9093:9093"
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yaml"
+      - "--web.route-prefix=/alertmanager/"
+
   grafana:
     image: grafana/grafana:13.0
     container_name: grafana
@@ -86,12 +100,12 @@ services:
     expose:
       - 9100
     command:
-      - '--path.rootfs=/host'
+      - "--path.rootfs=/host"
       - "--collector.processes"
     pid: host
     restart: unless-stopped
     volumes:
-      - '/:/host:ro,rslave'
+      - "/:/host:ro,rslave"
     logging: *default-logging
 
   cadvisor:
