@@ -29,6 +29,11 @@ services:
     networks:
       - default
       - inter-web-shared
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.job=nl-monitor-kwebserver"
+      - "prometheus.metrics_port=2112"
+      - "prometheus.metrics_path=/metrics"
     restart: unless-stopped
 
 volumes:

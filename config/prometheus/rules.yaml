@@ -1,11 +1,29 @@
 groups:
-  - name: Instance_Alerts
+  - name: Container_Service_Alerts
     rules:
-      - alert: InstanceDown
-        expr: up == 0
-        for: 10s
+      - alert: ContainerError
+        expr: (up or on (job, instance) (0 * (up == 1))) == 0
+        #expr: present_over_time(up[1m]) unless count(up) by (instance, job)
+        #expr: |
+        #  count(up offset 10s) by (instance)
+        #  unless
+        #  count(up) by (instance)
+        #expr: (up == 0) or (absent(up) == 1)
+        #expr: up == 0
+        #expr: topk(1, time() - container_last_seen{id!~".*/.+",instance=~".+", job=~".+"} > 60)
+        #expr: topk(1, time() - container_last_seen{instance=~".+", job=~".+"} > 60)
+        #expr: topk(1, time() - container_last_seen{name=~".+"} > 60)
+        for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "Instance {{ $labels.instance }} is down"
-          description: "Prometheus is unable to scrape {{ $labels.instance  }} for more than 10 seconds."
+          summary: "Container from Docker service {{ $labels.job }} encountered an error"
+          description: "Container {{ $labels.instance }} from {{ $labels.job }} reported an error. Human intervention required."
+      - alert: ContainerDown
+        expr: topk(1, time() - container_last_seen{container_label_prometheus_job=~".+"} > 60)
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container from Docker service {{ $labels.container_label_prometheus_job }} gone!"
+          description: "cAdvisor reported that one of containers from Docker service {{ $labels.container_label_prometheus_job }} dissapeared. If this is not intentional, please check if service are healthy."

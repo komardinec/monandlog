@@ -1,0 +1,12 @@
+{{ define "telegram.custom.message" }}
+<b>{{ if eq .Status "firing" }}Something bad happened!!!{{ else }}Problem solved!{{ end }}</b>
+
+<b>Event:</b> {{ .CommonLabels.alertname }}
+<b>Summary:</b> {{ (index .Alerts 0).Annotations.summary }}
+<b>Description:</b> {{ (index .Alerts 0).Annotations.description }}
+<b>Status:</b> {{ .Status }}
+<b>Severity:</b> {{ .CommonLabels.severity }}
+<b>Instance:</b> {{ .CommonLabels.instance }}
+
+<b>Start time:</b> {{ (index .Alerts 0).StartsAt.Local.Format "02-01-2006 15:04:05 UTC" }}
+{{ end }}

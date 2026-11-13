@@ -1,0 +1,26 @@
+global:
+  resolve_timeout: 10m
+
+templates:
+  - "/etc/alertmanager/templates/*.tmpl"
+
+route:
+  group_by: ['alertname', 'instance', 'job']
+  group_wait: 60s
+  group_interval: 60s
+  repeat_interval: 1h
+  receiver: "main-alert-group"
+
+receivers:
+  - name: "main-alert-group"
+    #webhook_configs:
+    #  - url: "https://komarufree.dpdns.com"
+    #    http_config:
+    #      basic_auth:
+     #       username: "alertmanager"
+    #        password: "P@ssw0rd"
+    telegram_configs:
+      - api_url: "https://api.telegram.org"
+        bot_token: ""
+        chat_id: -
+        message: '{{ template "telegram.custom.message" . }}'
