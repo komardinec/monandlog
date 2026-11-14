@@ -3,7 +3,8 @@ global:
   evaluation_interval: 15s
 
 rule_files:
-  - "rules.yaml"
+  - "alert_rules.yaml"
+  - "recording_rules.yaml"
 
 alerting:
   alertmanagers:

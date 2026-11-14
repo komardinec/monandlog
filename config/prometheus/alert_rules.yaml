@@ -2,7 +2,8 @@ groups:
   - name: Container_Service_Alerts
     rules:
       - alert: ContainerError
-        expr: (up or on (job, instance) (0 * (up == 1))) == 0
+        expr: (alert:up:on) == 0
+        #expr: (up or on (job, instance) (0 * (up == 1))) == 0
         #expr: present_over_time(up[1m]) unless count(up) by (instance, job)
         #expr: |
         #  count(up offset 10s) by (instance)
@@ -20,7 +21,8 @@ groups:
           summary: "Container from Docker service {{ $labels.job }} encountered an error"
           description: "Container {{ $labels.instance }} from {{ $labels.job }} reported an error. Human intervention required."
       - alert: ContainerDown
-        expr: topk(1, time() - container_last_seen{container_label_prometheus_job=~".+"} > 60)
+        #expr: topk(1, time() - container_last_seen{container_label_prometheus_job=~".+"} > 60)
+        expr: alert:container_last_seen:topk_gt
         for: 1m
         labels:
           severity: critical

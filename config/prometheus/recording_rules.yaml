@@ -1,0 +1,14 @@
+groups:
+  - name: api_performance_rules
+    interval: 15s
+    rules:
+      - record: job:http_request_total:rate5m
+        expr: sum(rate(http_request_total[5m])) by (job)
+  - name: alert_evaluation_rules
+    interval: 15s
+    rules:
+      - record: alert:up:on
+        expr: up or on (job, instance) (0 * (up == 1))
+      - record: alert:container_last_seen:topk_gt
+        expr: topk(1, time() - container_last_seen{container_label_prometheus_job=~".+"} > 60)
+
